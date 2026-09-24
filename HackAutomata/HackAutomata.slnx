@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="HackAutomata.vcxproj" Id="ef4dfc36-f6fe-46c9-896e-cc64de83363c" />
+</Solution>
