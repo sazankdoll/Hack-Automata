@@ -318,6 +318,15 @@ void SceneManager::Draw(void)
             }
         }
     }
+
+    auto& keyConfInputManager = KeyConfInputManager::GetInstance();
+
+    if (keyConfInputManager.isTrigerDown("END"))
+    {
+        Application::GetInstance().GameEnd();
+    }
+
+
 #endif 
 
     // フェードを先に描画する

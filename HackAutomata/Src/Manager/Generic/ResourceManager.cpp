@@ -67,6 +67,7 @@ void ResourceManager::Initialize(void)
 	
 
 	/* モデル */
+	_SetResource(LOAD_TYPE::MODEL, SRC::MODEL_STAGE, PATH_MODEL + "Stage/Stage.mv1");
 	
 	/* アニメーション */
 	

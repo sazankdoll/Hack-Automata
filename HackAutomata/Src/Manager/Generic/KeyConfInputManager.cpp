@@ -128,6 +128,10 @@ void KeyConfInputManager::InitInputTable(void)
 		{INPUT_TYPE::KEY_BOARD, KEY_INPUT_RSHIFT},
 		{INPUT_TYPE::KEY_BOARD, KEY_INPUT_HOME}
 	};
+	inputTable_["END"] =
+	{
+		{INPUT_TYPE::KEY_BOARD, KEY_INPUT_ESCAPE},
+	};
 }
 
 void KeyConfInputManager::Update(void)

@@ -8,6 +8,8 @@
 #include "../../Object/Common/DamageController.h"
 #include "../../Common/GameTimer.h"
 
+#include "../../Object/Actor/Stage/Stage.h"
+
 
 /// @brief ゲーム本編のメインロジックを管理するシーンクラス
 class SceneGame : public SceneBase
@@ -41,6 +43,9 @@ public:
     void Release(void) override;
 
 private:
+
+	std::unique_ptr<Stage> stage_;
+
 
 
 protected:
