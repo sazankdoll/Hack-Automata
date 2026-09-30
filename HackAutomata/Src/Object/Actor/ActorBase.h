@@ -1,95 +1,87 @@
 #pragma once
 #include "../Common/Transform.h"
-#include <map>
 #include <vector>
-class ColliderBase;
-class TimeManager;
-class CollisionController;
+#include <memory>
+#include <typeindex>
+#include <unordered_map>
 
+class Component;
+class TimeManager;
+
+/// @brief コンポーネント指向におけるゲームオブジェクト基底クラス
 class ActorBase
 {
 public:
 
-	// 当たり判定配列(タグ / 複数の当たり判定)
-	using ColliderMap = std::map<int, std::vector<ColliderBase*>>;
-
-	// コンストラクタ
+	/// @brief コンストラクタ
 	ActorBase(void);
 
-	// デストラクタ
-	virtual ~ActorBase(void) = default;
+	/// @brief デストラクタ
+	virtual ~ActorBase(void);
 
 	/// @brief リソースの読み込み
-	virtual void Load(void) = 0;
+	virtual void Load(void);
 
-	// 初期化
-	void Init(void);
+	/// @brief 初期化処理
+	virtual void Init(void);
 
-	// 更新
-	virtual void Update(void) = 0;
+	/// @brief 更新処理
+	virtual void Update(void);
 
-	// 描画
+	/// @brief 描画処理
 	virtual void Draw(void);
 
-	// 解放
-	void Release(void);
+	/// @brief 解放処理
+	virtual void Release(void);
 
-	// 大きさ、回転、座標等の取得
-	const Transform& GetTransform(void) const;
-
-	Transform& GetTransform(void);
-
-	// 自身の衝突情報取得
-	const ColliderMap& GetOwnColliders(void) const
+	/// @brief コンポーネントの追加
+	/// @tparam T 追加するコンポーネントの型
+	/// @return 生成されたコンポーネントのポインタ
+	template <typename T, typename... Args>
+	T* AddComponent(Args&&... _args)
 	{
-		return ownColliders_;
+		T* newComponent = new T(this, std::forward<Args>(_args)...);
+		components_.push_back(newComponent);
+		return newComponent;
 	}
 
-	// 特定の自身の衝突情報取得
-	const std::vector<ColliderBase*>* GetOwnCollider(int _key) const;
+	/// @brief 特定のコンポーネントを取得する
+	/// @tparam T 取得したいコンポーネントの型
+	/// @return 該当するコンポーネントのポインタ（無ければnullptr）
+	template <typename T>
+	T* GetComponent(void) const
+	{
+		for (auto* component : components_)
+		{
+			T* casted = dynamic_cast<T*>(component);
+			if (casted != nullptr)
+			{
+				return casted;
+			}
+		}
+		return nullptr;
+	}
 
-	// 衝突対象となるコライダを登録
-	void AddHitCollider(const ColliderBase* hitCollider);
+	/// @brief Transform情報の取得(const)
+	/// @return Transform情報
+	const Transform& GetTransform(void) const { return transform_; }
 
-	/// @brief 自身の衝突対象となるコライダリストの取得
-	std::vector<const ColliderBase*> GetHitCollider(void)const { return hitColliders_; };
+	/// @brief Transform情報の取得
+	/// @return Transform情報
+	Transform& GetTransform(void) { return transform_; }
 
-	// 衝突対象となるコライダをクリア
-	void ClearHitCollider(void);
+	/// @brief 生存状態の取得
+	/// @return 生存していればtrue
+	bool GetIsActive(void) const { return isActive_; }
 
+	/// @brief 生存状態の設定
+	/// @param _isActive 生存状態
+	void SetIsActive(bool _isActive) { isActive_ = _isActive; }
 
 protected:
 
-	// シングルトン参照
-	TimeManager& timeManager_;
-
-
-	// モデル制御の基本情報
-	Transform transform_;
-
-	// 自身の衝突情報
-	ColliderMap ownColliders_;
-
-	// 衝突相手の情報
-	std::vector<const ColliderBase*> hitColliders_;
-
-	// 大きさ、回転、座標の初期化
-	virtual void InitTransform(void) = 0;
-
-	// 衝突判定の初期化
-	virtual void InitCollider(void) = 0;
-
-	// アニメーションの初期化
-	virtual void InitAnimation(void) = 0;
-
-	// 初期化後の個別処理
-	virtual void InitPost(void) = 0;
-
-	// 前描画
-	virtual void DrawPre(void) {};
-
-	// 後描画
-	virtual void DrawLate(void) {};
-
-	virtual void ReleasePost(void) {};
+	TimeManager& timeManager_;		// タイムマネージャーの参照
+	Transform transform_;			// 位置・回転・スケール情報
+	std::vector<Component*> components_;	// 所有するコンポーネント配列
+	bool isActive_;					// アクターの有効フラグ
 };

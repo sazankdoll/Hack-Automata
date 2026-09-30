@@ -1,105 +1,74 @@
 #include "ActorBase.h"
-#include "../../Manager/Generic/ResourceManager.h"
+#include "Component/Component.h"
 #include "../../Manager/System/TimeManager.h"
-#include "../../Object/Collision/CollisionController.h"
-#include "../Collider/ColliderBase.h"
 
 ActorBase::ActorBase(void)
 	: timeManager_(TimeManager::GetInstance())
 	, transform_(Transform())
+	, isActive_(true)
 {
+}
+
+ActorBase::~ActorBase(void)
+{
+	Release();
+}
+
+void ActorBase::Load(void)
+{
+	// 派生クラスまたは個別設定で必要な場合オーバーライド
 }
 
 void ActorBase::Init(void)
 {
-	// Transform初期化
-	InitTransform();
+	// 保持している全コンポーネントの初期化
+	for (auto* component : components_)
+	{
+		if (component != nullptr)
+		{
+			component->Init();
+		}
+	}
+}
 
-	// 衝突判定の初期化an
-	InitCollider();
+void ActorBase::Update(void)
+{
+	if (!isActive_) { return; }
 
-	// アニメーションの初期化
-	InitAnimation();
-
-	// 初期化後の個別処理
-	InitPost();
-
+	// 保持している全コンポーネントの更新
+	for (auto* component : components_)
+	{
+		if (component != nullptr && component->GetEnable())
+		{
+			component->Update();
+		}
+	}
 }
 
 void ActorBase::Draw(void)
 {
-	// 前描画
-	DrawPre();
+	if (!isActive_) { return; }
 
-	if (transform_.modelId != -1)
+	// 保持している全コンポーネントの描画
+	for (auto* component : components_)
 	{
-		MV1DrawModel(transform_.modelId);
+		if (component != nullptr && component->GetEnable())
+		{
+			component->Draw();
+		}
 	}
-
-	// 後描画
-	DrawLate();
-
-	//if (sceneMng_.GetIsDebugMode())
-	//{
-	//	// 所有しているコライダの描画
-	//	for (const auto& [type, collider] : ownColliders_)
-	//	{
-	//		collider->Draw();
-	//	}
-	//}
 }
 
 void ActorBase::Release(void)
 {
-	ReleasePost();
-
-	transform_.Release();
-
-	CollisionController::GetInstance().UnregisterActor(this);
-
-	// 自身のコライダーの解放
-	for (auto& [key, colliders] : ownColliders_)
+	// 所有している全コンポーネントの解放と破棄
+	for (auto* component : components_)
 	{
-		for (auto* collider : colliders)
+		if (component != nullptr)
 		{
-			delete collider;
+			component->Release();
+			delete component;
 		}
-		colliders.clear();
 	}
-	ownColliders_.clear();
-}
-
-const Transform& ActorBase::GetTransform(void) const
-{
-	return transform_;
-}
-
-Transform& ActorBase::GetTransform(void)
-{
-	return transform_;
-}
-
-const std::vector<ColliderBase*>* ActorBase::GetOwnCollider(int _key) const
-{
-	auto it = ownColliders_.find(_key);
-	if (it == ownColliders_.end())
-	{
-		return nullptr;
-	}
-
-	return &it->second;
-}
-
-void ActorBase::AddHitCollider(const ColliderBase* hitCollider)
-{
-	for (const auto& c : hitColliders_)
-	{
-		// 衝突相手の登録
-		if (c == hitCollider) { return; }
-	}
-	hitColliders_.emplace_back(hitCollider);
-}
-void ActorBase::ClearHitCollider(void)
-{
-	hitColliders_.clear();
+	components_.clear();
 }

@@ -11,10 +11,7 @@ public:
 	void Draw(void) override;
 
 protected:
-	void InitTransform(void) override;
-	void InitCollider(void) override;
-	void InitAnimation(void) override;
-	void InitPost(void) override;
+	
 
 private:
 

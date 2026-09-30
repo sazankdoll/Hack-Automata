@@ -25,7 +25,7 @@ void SceneGame::Load(void)
 {
 	SceneBase::Load();
 
-	stage_->Load();
+	
 	//時間カウントリセット
 	TimeManager::GetInstance().Reset();
 
@@ -48,7 +48,7 @@ void SceneGame::Initialize(void)
 	// マウスを表示しない設定にする
 	SetMouseDispFlag(false);
 
-	stage_->Init();
+	
 	
 }
 
@@ -66,7 +66,7 @@ void SceneGame::Update(void)
 
 void SceneGame::Draw(void)
 {
-	stage_->Draw();
+	
 
 #ifdef _DEBUG
 
