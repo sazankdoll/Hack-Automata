@@ -1,5 +1,4 @@
 #include "ActorBase.h"
-#include "Component/Component.h"
 #include "../../Manager/System/TimeManager.h"
 
 ActorBase::ActorBase(void)

@@ -5,7 +5,6 @@
 #include "../../Manager/Generic/KeyConfInputManager.h"
 #include "../../Manager/Decoration/SoundManager.h"
 #include "../../Application.h"
-#include "../../Manager/Generic/InputManager.h"
 #include "../../Manager/Generic/SceneManager.h"
 #include "SceneTitle.h"
 #include "../../Utility/UtilityMath.h"

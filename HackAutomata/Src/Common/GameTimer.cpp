@@ -15,7 +15,6 @@ GameTimer::GameTimer(float _gameTime)
 	std::fill(timeText_.begin(), timeText_.end(), -1);
 
 	// •¡”‰æ‘œŠ„‚è“–‚Ä
-	
 }
 
 void GameTimer::Update(void)

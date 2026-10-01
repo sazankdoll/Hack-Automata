@@ -4,6 +4,8 @@
 #include <memory>
 #include <typeindex>
 #include <unordered_map>
+#include "Component/Component.h"
+#include "../Collider/ColliderBase.h"
 
 class Component;
 class TimeManager;
@@ -35,8 +37,6 @@ public:
 	virtual void Release(void);
 
 	/// @brief コンポーネントの追加
-	/// @tparam T 追加するコンポーネントの型
-	/// @return 生成されたコンポーネントのポインタ
 	template <typename T, typename... Args>
 	T* AddComponent(Args&&... _args)
 	{
@@ -46,8 +46,6 @@ public:
 	}
 
 	/// @brief 特定のコンポーネントを取得する
-	/// @tparam T 取得したいコンポーネントの型
-	/// @return 該当するコンポーネントのポインタ（無ければnullptr）
 	template <typename T>
 	T* GetComponent(void) const
 	{
@@ -62,20 +60,43 @@ public:
 		return nullptr;
 	}
 
+	/// @brief 所有している全てのコライダーコンポーネントを取得する
+	/// @return コライダーコンポーネントのポインタリスト
+	std::vector<ColliderBase*> GetColliders(void) const
+	{
+		std::vector<ColliderBase*> colliders;
+		for (auto* component : components_)
+		{
+			auto* collider = dynamic_cast<ColliderBase*>(component);
+			if (collider != nullptr)
+			{
+				colliders.push_back(collider);
+			}
+		}
+		return colliders;
+	}
+
+	/// @brief 前フレームで当たった相手コライダーのリストを取得
+	/// @return 当たったコライダーのリスト
+	const std::vector<const ColliderBase*>& GetHitCollider(void) const { return hitColliders_; }
+
+	/// @brief 当たったコライダーを追加する
+	/// @param _collider 衝突した相手のコライダー
+	void AddHitCollider(const ColliderBase* _collider) { hitColliders_.push_back(_collider); }
+
+	/// @brief 当たったコライダーの履歴をクリアする
+	void ClearHitCollider(void) { hitColliders_.clear(); }
+
 	/// @brief Transform情報の取得(const)
-	/// @return Transform情報
 	const Transform& GetTransform(void) const { return transform_; }
 
 	/// @brief Transform情報の取得
-	/// @return Transform情報
 	Transform& GetTransform(void) { return transform_; }
 
 	/// @brief 生存状態の取得
-	/// @return 生存していればtrue
 	bool GetIsActive(void) const { return isActive_; }
 
 	/// @brief 生存状態の設定
-	/// @param _isActive 生存状態
 	void SetIsActive(bool _isActive) { isActive_ = _isActive; }
 
 protected:
@@ -83,5 +104,6 @@ protected:
 	TimeManager& timeManager_;		// タイムマネージャーの参照
 	Transform transform_;			// 位置・回転・スケール情報
 	std::vector<Component*> components_;	// 所有するコンポーネント配列
+	std::vector<const ColliderBase*> hitColliders_; // 当たった相手コライダーの履歴
 	bool isActive_;					// アクターの有効フラグ
 };

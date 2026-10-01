@@ -272,7 +272,6 @@ VECTOR CollisionController::IsActorHitPosWithTag(const ActorBase* _actor,
 
 	return UtilityMath::VECTOR_ZERO;
 }
-
 void CollisionController::SetCollisionActive(ActorBase* _targetActor,
 	ColliderBase::TAG _targetTag, const bool _isActive)
 {
@@ -281,19 +280,19 @@ void CollisionController::SetCollisionActive(ActorBase* _targetActor,
 		return;
 	}
 
-	auto& ownCollidersMap = _targetActor->GetOwnColliders();
-	int targetKey = static_cast<int>(_targetTag);
+	// アクターが所有する全コライダーを取得
+	auto colliders = _targetActor->GetColliders();
 
-	auto it = const_cast<ActorBase::ColliderMap&>(ownCollidersMap).find(targetKey);
-	if (it != const_cast<ActorBase::ColliderMap&>(ownCollidersMap).end())
+	for (auto* collider : colliders)
 	{
-		for (auto* collider : it->second)
+		if (collider == nullptr)
 		{
-			if (collider == nullptr)
-			{
-				continue;
-			}
+			continue;
+		}
 
+		// 指定されたタグを持つコライダーのみ有効化フラグを変更
+		if (collider->GetCollisionTag() == _targetTag)
+		{
 			collider->SetActive(_isActive);
 		}
 	}
@@ -307,19 +306,19 @@ void CollisionController::SetActorColliderRadius(ActorBase* _targetActor,
 		return;
 	}
 
-	auto& ownCollidersMap = _targetActor->GetOwnColliders();
-	int targetKey = static_cast<int>(_targetTag);
-	auto it = const_cast<ActorBase::ColliderMap&>(ownCollidersMap).find(targetKey);
-	
-	if (it != const_cast<ActorBase::ColliderMap&>(ownCollidersMap).end())
-	{
-		for (auto* collider : it->second)
-		{
-			if (collider == nullptr)
-			{
-				continue;
-			}
+	// アクターが所有する全コライダーを取得
+	auto colliders = _targetActor->GetColliders();
 
+	for (auto* collider : colliders)
+	{
+		if (collider == nullptr)
+		{
+			continue;
+		}
+
+		// 指定されたタグを持つコライダーのみ半径を変更
+		if (collider->GetCollisionTag() == _targetTag)
+		{
 			collider->SetRadius(_radius);
 		}
 	}
@@ -333,25 +332,19 @@ void CollisionController::SetActorSphereLocalPos(ActorBase* _targetActor,
 		return;
 	}
 
-	auto& ownCollidersMap = _targetActor->GetOwnColliders();
-	int targetKey = static_cast<int>(_targetTag);
-	auto it = const_cast<ActorBase::ColliderMap&>(ownCollidersMap).find(targetKey);
+	// アクターが所有する全コライダーを取得
+	auto colliders = _targetActor->GetColliders();
 
-	// そもそも指定したタグが存在するかチェック
-	if (it == const_cast<ActorBase::ColliderMap&>(ownCollidersMap).end())
-	{
-		return;
-	}
-
-	for (auto* collider : it->second)
+	for (auto* collider : colliders)
 	{
 		if (collider == nullptr)
 		{
 			continue;
 		}
 
-		// 形状が球である場合のみキャストして位置を変更する
-		if (collider->GetShapeType() == ColliderBase::SHAPE::SPHERE)
+		// タグが一致し、かつ形状が「球」である場合のみキャストして設定
+		if (collider->GetCollisionTag() == _targetTag &&
+			collider->GetShapeType() == ColliderBase::SHAPE::SPHERE)
 		{
 			auto* sphereCollider = static_cast<ColliderSphere*>(collider);
 			if (sphereCollider != nullptr)
@@ -362,8 +355,8 @@ void CollisionController::SetActorSphereLocalPos(ActorBase* _targetActor,
 	}
 }
 
-void CollisionController::SetActorCapsuleShape(ActorBase* _targetActor, 
-	ColliderBase::TAG _targetTag, const VECTOR& _localStartPos, const VECTOR& _localEndPos, 
+void CollisionController::SetActorCapsuleShape(ActorBase* _targetActor,
+	ColliderBase::TAG _targetTag, const VECTOR& _localStartPos, const VECTOR& _localEndPos,
 	float _radius)
 {
 	if (_targetActor == nullptr)
@@ -371,136 +364,92 @@ void CollisionController::SetActorCapsuleShape(ActorBase* _targetActor,
 		return;
 	}
 
-	auto& ownCollidersMap = _targetActor->GetOwnColliders();
-	int targetKey = static_cast<int>(_targetTag);
-	auto it = const_cast<ActorBase::ColliderMap&>(ownCollidersMap).find(targetKey);
+	// アクターが所有する全コライダーを取得
+	auto colliders = _targetActor->GetColliders();
 
-	// そもそも指定したタグが存在するかチェック
-	if (it == const_cast<ActorBase::ColliderMap&>(ownCollidersMap).end())
-	{
-		return;
-	}
-
-	for (auto* collider : it->second)
+	for (auto* collider : colliders)
 	{
 		if (collider == nullptr)
 		{
 			continue;
 		}
 
-		// 形状が球である場合のみキャストして位置を変更する
-		if (collider->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
+		// タグが一致し、かつ形状が「カプセル」である場合のみキャストして設定
+		if (collider->GetCollisionTag() == _targetTag &&
+			collider->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
 		{
-			auto* CapsuleCollider = static_cast<ColliderCapsule*>(collider);
-			if (CapsuleCollider != nullptr)
+			auto* capsuleCollider = static_cast<ColliderCapsule*>(collider);
+			if (capsuleCollider != nullptr)
 			{
-				CapsuleCollider->SetLocalStartPos(_localStartPos);
-				CapsuleCollider->SetLocalEndPos(_localEndPos);
-				CapsuleCollider->SetRadius(_radius);
+				capsuleCollider->SetLocalStartPos(_localStartPos);
+				capsuleCollider->SetLocalEndPos(_localEndPos);
+				capsuleCollider->SetRadius(_radius);
 			}
 		}
 	}
 }
 
-void CollisionController::ResolveCollision(ActorBase* _actorA, ActorBase* _actorB,
-	const CollisionInfo& _info)
+void CollisionController::ResolveCollision(ActorBase* _actorA, ActorBase* _actorB,const CollisionInfo& _info)
 {
-	if (_actorA == nullptr || _actorB == nullptr)
-	{
-		return;
-	}
+
+	if (_actorA == nullptr || _actorB == nullptr) { return; }
 
 	using TAG = ColliderBase::TAG;
 
-	// カメラの押し戻しはカメラ自身で行うため、カメラが関わる衝突はここで一切処理しない
 	if (_info.myCollider->GetCollisionTag() == TAG::CAMERA ||
 		_info.hitCollider->GetCollisionTag() == TAG::CAMERA)
 	{
 		return;
 	}
 
-	// 通常の押し戻しベクトルを計算
 	VECTOR pushVector = VScale(_info.hitNormal, _info.penetration);
 
-	// アクターAが静的オブジェクト（ステージや壁）のコライダーを持っているかチェック
+	auto collidersA = _actorA->GetColliders();
+	auto collidersB = _actorB->GetColliders();
+
 	bool isActorAStatic = false;
-	for (const auto& [id, colliderVector] : _actorA->GetOwnColliders())
+	for (const auto* collider : collidersA)
 	{
-		for (const auto* collider : colliderVector)
+		if (collider->GetCollisionTag() == TAG::STAGE || collider->GetCollisionTag() == TAG::WALL)
 		{
-			if (collider->GetCollisionTag() == TAG::STAGE || collider->GetCollisionTag() == TAG::WALL)
-			{
-				isActorAStatic = true;
-				break;
-			}
-		}
-		if (isActorAStatic)
-		{
+			isActorAStatic = true;
 			break;
 		}
 	}
 
-	// アクターBが静的オブジェクト（ステージや壁）のコライダーを持っているかチェック
 	bool isActorBStatic = false;
-	for (const auto& [id, colliderVector] : _actorB->GetOwnColliders())
+	for (const auto* collider : collidersB)
 	{
-		for (const auto* collider : colliderVector)
+		if (collider->GetCollisionTag() == TAG::STAGE || collider->GetCollisionTag() == TAG::WALL)
 		{
-			if (collider->GetCollisionTag() == TAG::STAGE || collider->GetCollisionTag() == TAG::WALL)
-			{
-				isActorBStatic = true;
-				break;
-			}
-		}
-		if (isActorBStatic)
-		{
+			isActorBStatic = true;
 			break;
 		}
 	}
 
-	// 両方が静的オブジェクトの場合は位置を動かさない
-	if (isActorAStatic && isActorBStatic)
-	{
-		return;
-	}
+	if (isActorAStatic && isActorBStatic) { return; }
 
 	if (!isActorAStatic && isActorBStatic)
 	{
-		if (fabsf(_info.hitNormal.y) < 0.5f)
-		{
-			pushVector.y = 0.0f;
-		}
-
+		if (fabsf(_info.hitNormal.y) < 0.5f) { pushVector.y = 0.0f; }
 		_actorA->GetTransform().Translate(pushVector);
 		return;
 	}
 	else if (isActorAStatic && !isActorBStatic)
 	{
-		if (fabsf(_info.hitNormal.y) < 0.5f)
-		{
-			pushVector.y = 0.0f;
-		}
-
+		if (fabsf(_info.hitNormal.y) < 0.5f) { pushVector.y = 0.0f; }
 		_actorB->GetTransform().Translate(VScale(pushVector, -1.0f));
 		return;
 	}
 
-	// 動くオブジェクト同士の衝突の場合は、Y軸の押し戻しを無視する
 	pushVector.y = 0.0f;
 
 	bool hasMyCollider = false;
-	for (const auto& [id, colliderVector] : _actorA->GetOwnColliders())
+	for (const auto* collider : collidersA)
 	{
-		for (const auto* collider : colliderVector)
+		if (collider == _info.myCollider)
 		{
-			if (collider == _info.myCollider)
-			{
-				hasMyCollider = true;
-				break;
-			}
-		}
-		if (hasMyCollider)
-		{
+			hasMyCollider = true;
 			break;
 		}
 	}
@@ -513,6 +462,7 @@ void CollisionController::ResolveCollision(ActorBase* _actorA, ActorBase* _actor
 	{
 		_actorB->GetTransform().Translate(VScale(pushVector, -1.0f));
 	}
+
 }
 
 void CollisionController::UpdateCollisionPars(void)
@@ -527,123 +477,92 @@ void CollisionController::UpdateCollisionPars(void)
 	currentColInfos_.clear();
 
 	size_t actorCount = actors_.size();
-
-	// 判定対象が2つ未満なら処理終了
-	if (actorCount < 2)
-	{
-		return;
-	}
+	if (actorCount < 2) { return; }
 
 	// アクター間の総当たり判定
 	for (size_t i = 0; i < actorCount; ++i)
 	{
 		auto actorA = actors_[i];
-		const auto& collidersMapA = actorA->GetOwnColliders();
+		auto collidersA = actorA->GetColliders(); // コンポーネントからコライダー一覧を取得
 
 		for (size_t j = i + 1; j < actorCount; ++j)
 		{
 			auto actorB = actors_[j];
-			const auto& collidersMapB = actorB->GetOwnColliders();
+			auto collidersB = actorB->GetColliders(); // コンポーネントからコライダー一覧を取得
 
 			bool isStageCollision = false;
 
-			// アクターAのコライダーの中にSTAGEがあるかチェック
-			for (const auto& [idA, colliderVectorA] : collidersMapA)
+			// ステージ判定フラグチェック
+			for (const auto* colA : collidersA)
 			{
-				for (const auto* colA : colliderVectorA)
+				if (colA->GetCollisionTag() == ColliderBase::TAG::STAGE ||
+					colA->GetCollisionTag() == ColliderBase::TAG::WALL)
 				{
-					if (colA->GetCollisionTag() == ColliderBase::TAG::STAGE
-						|| colA->GetCollisionTag() == ColliderBase::TAG::WALL)
+					isStageCollision = true;
+					break;
+				}
+			}
+			if (!isStageCollision)
+			{
+				for (const auto* colB : collidersB)
+				{
+					if (colB->GetCollisionTag() == ColliderBase::TAG::STAGE ||
+						colB->GetCollisionTag() == ColliderBase::TAG::WALL)
 					{
 						isStageCollision = true;
 						break;
 					}
 				}
-				if (isStageCollision) { break; }
 			}
 
-			// アクターBのコライダーの中にSTAGEがあるかチェック
-			for (const auto& [idB, colliderVectorB] : collidersMapB)
-			{
-				for (const auto* colB : colliderVectorB)
-				{
-					if (colB->GetCollisionTag() == ColliderBase::TAG::STAGE
-						|| colB->GetCollisionTag() == ColliderBase::TAG::WALL)
-					{
-						isStageCollision = true;
-						break;
-					}
-				}
-				if (isStageCollision) { break; }
-			}
-
-			// どちらもステージではない場合のみ、距離によるカリングを行う
+			// カリング処理
 			if (!isStageCollision)
 			{
 				VECTOR positionA = actorA->GetTransform().pos;
 				VECTOR positionB = actorB->GetTransform().pos;
-				float distanceX = positionB.x - positionA.x;
-				float distanceY = positionB.y - positionA.y;
-				float distanceZ = positionB.z - positionA.z;
-				float distSquare = (distanceX * distanceX) + (distanceY * distanceY) + (distanceZ * distanceZ);
+				VECTOR diff = VSub(positionB, positionA);
+				float distSquare = UtilityMath::SqrMagnitude(diff);
 
-				// 一定距離以上離れている場合は、詳細な判定をスキップ
 				if (distSquare > cullingDistSquare_)
 				{
 					continue;
 				}
 			}
 
-			// マップから vector を取り出すループ
-			for (const auto& [idA, colliderVectorA] : collidersMapA)
+			// コライダー同士の総当たりチェック
+			for (const auto* colA : collidersA)
 			{
-				for (const auto* colA : colliderVectorA)
+				if (colA == nullptr || !colA->IsActive()) { continue; }
+
+				for (const auto* colB : collidersB)
 				{
-					if (colA == nullptr || !colA->IsActive())
-					{
-						continue;
-					}
+					if (colB == nullptr || !colB->IsActive()) { continue; }
 
-					// 相手のマップから vector を取り出すループ
-					for (const auto& [idB, colliderVectorB] : collidersMapB)
+					if (CanCollide(static_cast<int>(colA->GetCollisionTag()),
+						static_cast<int>(colB->GetCollisionTag())))
 					{
-						for (const auto* colB : colliderVectorB)
+						CollisionInfo info;
+						if (CheckCollision(colA, colB, info))
 						{
-							if (colB == nullptr || !colB->IsActive())
+							actorA->AddHitCollider(colB);
+							actorB->AddHitCollider(colA);
+
+							currentColInfos_[actorA].push_back(info);
+
+							CollisionInfo reorderInfo = info;
+							reorderInfo.myCollider = info.hitCollider;
+							reorderInfo.hitCollider = info.myCollider;
+							reorderInfo.hitNormal = VScale(info.hitNormal, -1.0f);
+							currentColInfos_[actorB].push_back(reorderInfo);
+
+							auto tagA = colA->GetCollisionTag();
+							auto tagB = colB->GetCollisionTag();
+							auto pair = (tagA < tagB) ? std::make_pair(tagA, tagB) : std::make_pair(tagB, tagA);
+							activeCollisions_.insert(pair);
+
+							if (!colA->IsTrigger() && !colB->IsTrigger())
 							{
-								continue;
-							}
-
-							// 衝突タグによる判定可否の確認
-							if (CanCollide(static_cast<int>(colA->GetCollisionTag()),
-								static_cast<int>(colB->GetCollisionTag())))
-							{
-								CollisionInfo info;
-
-								if (CheckCollision(colA, colB, info))
-								{
-									actorA->AddHitCollider(colB);
-									actorB->AddHitCollider(colA);
-
-									currentColInfos_[actorA].push_back(info);
-
-									CollisionInfo reorderInfo = info;
-									reorderInfo.myCollider = info.hitCollider;
-									reorderInfo.hitCollider = info.myCollider;
-									reorderInfo.hitNormal = VScale(info.hitNormal, -1.0f);
-									currentColInfos_[actorB].push_back(reorderInfo);
-
-									auto tagA = colA->GetCollisionTag();
-									auto tagB = colB->GetCollisionTag();
-
-									auto pair = (tagA < tagB) ? std::make_pair(tagA, tagB) : std::make_pair(tagB, tagA);
-									activeCollisions_.insert(pair);
-
-									if (!colA->IsTrigger() && !colB->IsTrigger())
-									{
-										ResolveCollision(actorA, actorB, info);
-									}
-								}
+								ResolveCollision(actorA, actorB, info);
 							}
 						}
 					}

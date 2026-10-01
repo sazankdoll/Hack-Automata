@@ -3,7 +3,6 @@
 #include <DxLib.h>
 #include <EffekseerForDXLib.h>
 
-#include "Manager/Generic/InputManager.h"
 #include "Manager/Generic/ResourceManager.h"
 #include "Manager/Generic/SceneManager.h"
 #include "Manager/InputTextManager.h"
@@ -44,7 +43,7 @@ void Application::Init(void)
 {
 
 	// アプリケーションの初期設定
-	SetWindowText("HackAutomata");
+	SetWindowText("MOMOTARO伝説");
 
 	// ウィンドウサイズ
 	SetGraphMode(SCREEN_SIZE_X, SCREEN_SIZE_Y, 32);
@@ -86,10 +85,8 @@ void Application::Init(void)
 
 	// 入力制御初期化
 	SetUseDirectInputFlag(true);
-	InputManager::CreateInstance();
 	InputTextManager::CreateInstance();
 	KeyConfInputManager::CreateInstance();
-
 
 	ResourceManager::CreateInstance();
 
@@ -106,11 +103,8 @@ void Application::Init(void)
 
 void Application::Run(void)
 {
-
-	InputManager& inputManager = InputManager::GetInstance();
 	SceneManager& sceneManager = SceneManager::GetInstance();
 	InputTextManager& inputTextManager = InputTextManager::GetInstance();
-
 	
 	// ゲームループ
 	while (ProcessMessage() == 0)
@@ -127,7 +121,7 @@ void Application::Run(void)
 		sceneManager.Update();
 
 		inputTextManager.Update();
-		inputManager.Update();
+		
 		KeyConfInputManager::GetInstance().Update();
 
 
@@ -149,10 +143,8 @@ void Application::Run(void)
 
 void Application::DestroyInstance(void)
 {
-	InputManager::GetInstance().DestroyInstance();
 	KeyConfInputManager::GetInstance().DestroyInstance();
 	ResourceManager::GetInstance().DestroyInstance(); 
-
 	// シーン管理解放
 	SceneManager::GetInstance().DestroyInstance();
 
